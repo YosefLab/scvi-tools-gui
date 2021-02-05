@@ -8,7 +8,7 @@ import datetime
 import io
 import plotly.express as px
 
-from jupyter_dash import JupyterDash
+
 
 import json
 
@@ -18,7 +18,7 @@ import scanpy as sc
 sc.set_figure_params(figsize=(4, 4))
 
 
-app = JupyterDash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 SIDEBAR_STYLE = {
     "position": "fixed",
@@ -468,4 +468,4 @@ def render_page_content(pathname):
 
 
 if __name__ == "__main__":
-    app.run_server(mode='inline')
+    app.run_server()
