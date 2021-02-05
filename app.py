@@ -8,6 +8,8 @@ import datetime
 import io
 import plotly.express as px
 
+from jupyter_dash import JupyterDash
+
 import json
 
 import scvi
@@ -466,4 +468,4 @@ def render_page_content(pathname):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(mode='inline')
