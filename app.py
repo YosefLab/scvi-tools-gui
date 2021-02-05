@@ -425,7 +425,7 @@ def train_callback(n_clicks, n_hidden, lr):
     )
     vae = scvi.model.SCVI(adata, n_hidden=n_hidden)
     vae.train(lr=lr)
-    model.save("my_model/")
+    vae.save("my_model/")
     return [dbc.Alert(
         [
             html.H4("Success!", className="alert-heading"),
