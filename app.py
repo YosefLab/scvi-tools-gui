@@ -42,7 +42,7 @@ LOGO_STYLE = {
 
 sidebar = html.Div(
     [
-        html.Img(src="https://www.scvi-tools.org/en/stable/_static/logo.png", style=LOGO_STYLE),
+        html.Img(src="https://docs.scvi-tools.org/en/stable/_static/logo.png", style=LOGO_STYLE),
         html.Hr(),
         html.P(
             "A gui for scvi.", className="lead"
