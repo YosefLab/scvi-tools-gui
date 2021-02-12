@@ -466,6 +466,9 @@ def render_page_content(pathname):
         ]
     )
 
+def run():
+    app.run_server()
+
 
 if __name__ == "__main__":
     app.run_server()
