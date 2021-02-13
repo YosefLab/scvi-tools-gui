@@ -76,8 +76,8 @@ def upload_page():
                         'textAlign': 'center',
                         'margin': '10px'
                     },
-                    # Do not allow multiple files to be uploaded
-                    multiple=False
+                    #  allow multiple files to be uploaded
+                    multiple=True
                 ),
                 html.H5("Google drive file link (faster): "),
                 dcc.Input(
@@ -110,7 +110,7 @@ def parse_contents(contents, filename, date):
         if 'h5ad' in filename:
             # Assume that the user uploaded a h5ad file
             
-            adata = scvi.data.read_h5ad("data.h5ad")
+            adata = scvi.data.read_h5ad("data_original.h5ad")
             print (adata)
             
         else:
@@ -447,6 +447,9 @@ def render_page_content(pathname):
 def run():
     app.run_server()
 
+def debug():
+    app.run_server(debug=True)
+
 
 if __name__ == "__main__":
-    app.run_server()
+    debug()
