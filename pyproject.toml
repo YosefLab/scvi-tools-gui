@@ -34,5 +34,8 @@ scvi-tools = ">=0.8.1"
 [tool.poetry.dev-dependencies]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+build-backend = "poetry.masonry.api"
+requires = [
+  "poetry>=1.0",
+  "setuptools", # keep it here or "pip install -e" would fail
+]
