@@ -8,7 +8,7 @@ import datetime
 import io
 import plotly.express as px
 
-
+from styles import SIDEBAR_STYLE, CONTENT_STYLE, LOGO_STYLE
 
 import json
 
@@ -20,25 +20,7 @@ sc.set_figure_params(figsize=(4, 4))
 
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-SIDEBAR_STYLE = {
-    "position": "fixed",
-    "top": 0,
-    "left": 0,
-    "bottom": 0,
-    "width": "16rem",
-    "padding": "2rem 1rem",
-    "background-color": "#f8f9fa",
-}
 
-CONTENT_STYLE = {
-    "margin-left": "18rem",
-    "margin-right": "2rem",
-    "padding": "2rem 1rem",
-}
-LOGO_STYLE = {
-    "height" : "auto",
-    "width" : "100%"
-}
 
 sidebar = html.Div(
     [
@@ -67,6 +49,8 @@ content = html.Div(id="page-content", style=CONTENT_STYLE)
 
 app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
 
+
+
 def upload_page():
     return( 
         html.Div(
@@ -92,8 +76,8 @@ def upload_page():
                         'textAlign': 'center',
                         'margin': '10px'
                     },
-                    # Allow multiple files to be uploaded
-                    multiple=True
+                    # Do not allow multiple files to be uploaded
+                    multiple=False
                 ),
                 html.H5("Google drive file link (faster): "),
                 dcc.Input(
@@ -143,16 +127,6 @@ def parse_contents(contents, filename, date):
         html.H5(filename),
         
     ])
-@app.callback(Output('output-data-upload', 'children'),
-              Input('upload-data', 'contents'),
-              State('upload-data', 'filename'),
-              State('upload-data', 'last_modified'))
-def update_output(list_of_contents, list_of_names, list_of_dates):
-    if list_of_contents is not None:
-        children = [
-            parse_contents(c, n, d) for c, n, d in
-            zip(list_of_contents, list_of_names, list_of_dates)]
-        return children
 
 def preprocess_page():
     return (
@@ -220,45 +194,7 @@ def preprocess_page():
             ], style={})
     )
 
-@app.callback([
-    Output("status_dialog","children"),
-    Output('n_genes_by_counts', 'figure'),
-    Output('total_counts', 'figure'),
-    Input('submit-button', 'n_clicks'),
-    State("filter_genes_min_count", "value"),
-    State("num_features_selected", "value"),
-    State("subset", "value"),
-    State("flavor", "value"),
-])
-def preprocess_callback(n_clicks, min_counts, num_features, subset, flavor):
-    
-    adata = scvi.data.read_h5ad("data_original.h5ad")
-    sc.pp.filter_genes(adata, min_counts=min_counts)
-    adata.layers["counts"] = adata.X.copy()
-    sc.pp.highly_variable_genes(
-        adata,
-        n_top_genes=int(num_features),
-        subset=subset,
-        layer="counts",
-        flavor=flavor
-    )
-    adata.write_h5ad("data.h5ad")
-    sc.pp.calculate_qc_metrics(adata, inplace=True)
-    # return [dbc.Alert(
-    #     [
-    #         html.H4("Success!", className="alert-heading"),
-    #         html.Hr(),
-    #         html.P(
-    #             str(adata),
-    #             className="mb-0",
-    #         ),
-
-    #     ], dismissable=True, is_open=True,
-    # )], 
-    return [], px.violin(adata.obs, y="n_genes_by_counts"), px.violin(adata.obs, y="total_counts")
-    
-
-def setup_anndata():
+def setup_anndata_page():
     adata = scvi.data.read_h5ad("data.h5ad")
     batch_key_names = adata.obs.keys()
     obsm_key_names = adata.obsm.keys()
@@ -298,37 +234,7 @@ def setup_anndata():
 
     )
 
-@app.callback(
-    Output("setup-anndata-status",  "children"),
-    Input("setup-anndata-submit", "n_clicks"),
-    State("batch_key", "value"),
-    State("obsm_key", "value"),
-    State("uns_key", "value"),
-)
-def setup_anndata_callback(n_clicks, batch_key, obsm_key, uns_key):
-    adata = scvi.data.read_h5ad("data.h5ad")
-    anndata_config = {
-
-        'batch_key' : batch_key,
-        'protein_expression_obsm_key' : obsm_key,
-        'protein_names_uns_key' : uns_key,
-    }
-    anndata_config = {key : anndata_config[key] for key in anndata_config  if anndata_config[key] and anndata_config[key] != 'None'}
-    json.dump(anndata_config, open('anndata_config.json','w'))
-
-
-    return [dbc.Alert(
-        [
-            html.H4("Success!", className="alert-heading"),
-            html.Hr(),
-            html.P(
-                str(adata),
-                className="mb-0",
-            ),
-        ], dismissable=True, is_open=True,
-    )]
-
-def train_model():
+def train_model_page():
     return (
         html.Div([
 
@@ -410,39 +316,112 @@ def train_model():
         ])
     )
 
+
+@app.callback(Output('output-data-upload', 'children'),
+              Input('upload-data', 'contents'),
+              State('upload-data', 'filename'),
+              State('upload-data', 'last_modified'))
+def update_output_callback(list_of_contents, list_of_names, list_of_dates):
+    if list_of_contents is not None:
+        children = [
+            parse_contents(c, n, d) for c, n, d in
+            zip(list_of_contents, list_of_names, list_of_dates)]
+        return children
+
+@app.callback([
+    Output("status_dialog","children"),
+    Output('n_genes_by_counts', 'figure'),
+    Output('total_counts', 'figure'),
+    Input('submit-button', 'n_clicks'),
+    State("filter_genes_min_count", "value"),
+    State("num_features_selected", "value"),
+    State("subset", "value"),
+    State("flavor", "value"),
+])
+def preprocess_callback(n_clicks, min_counts, num_features, subset, flavor):
+    if n_clicks >= 1:
+        adata = scvi.data.read_h5ad("data_original.h5ad")
+        sc.pp.filter_genes(adata, min_counts=min_counts)
+        adata.layers["counts"] = adata.X.copy()
+        sc.pp.highly_variable_genes(
+            adata,
+            n_top_genes=int(num_features),
+            subset=subset,
+            layer="counts",
+            flavor=flavor
+        )
+        adata.write_h5ad("data.h5ad")
+        sc.pp.calculate_qc_metrics(adata, inplace=True)
+
+        return [], px.violin(adata.obs, y="n_genes_by_counts"), px.violin(adata.obs, y="total_counts")
+
+@app.callback(
+    Output("setup-anndata-status",  "children"),
+    Input("setup-anndata-submit", "n_clicks"),
+    State("batch_key", "value"),
+    State("obsm_key", "value"),
+    State("uns_key", "value"),
+)
+def setup_anndata_callback(n_clicks, batch_key, obsm_key, uns_key):
+    if n_clicks >= 1:
+        adata = scvi.data.read_h5ad("data.h5ad")
+        anndata_config = {
+
+            'batch_key' : batch_key,
+            'protein_expression_obsm_key' : obsm_key,
+            'protein_names_uns_key' : uns_key,
+        }
+        anndata_config = {key : anndata_config[key] for key in anndata_config  if anndata_config[key] and anndata_config[key] != 'None'}
+        json.dump(anndata_config, open('anndata_config.json','w'))
+
+
+        return [dbc.Alert(
+            [
+                html.H4("Success!", className="alert-heading"),
+                html.Hr(),
+                html.P(
+                    str(adata),
+                    className="mb-0",
+                ),
+            ], dismissable=True, is_open=True,
+        )]
+
+
+
 @app.callback(
     Output("train-model-status", "children"),
     Input("train-button", "n_clicks"),
     State("n_hidden", "value"),
     State("lr", "value"),
 )
-def train_callback(n_clicks, n_hidden, lr):
-    adata = scvi.data.read_h5ad("data.h5ad")
-    anndata_config = json.loads(open("anndata_config.json", "r").read())
-    scvi.data.setup_anndata(
-        adata, 
-        **anndata_config
-    )
-    vae = scvi.model.SCVI(adata, n_hidden=n_hidden)
-    vae.train(lr=lr)
-    vae.save("my_model/")
-    return [dbc.Alert(
-        [
-            html.H4("Success!", className="alert-heading"),
-            html.Hr(),
-            html.P(
-                "Trained model and saved it at 'my_model'."
-            ),
+def train_model_callback(n_clicks, n_hidden, lr):
+    if n_clicks >= 1:
+        adata = scvi.data.read_h5ad("data.h5ad")
+        anndata_config = json.loads(open("anndata_config.json", "r").read())
+        scvi.data.setup_anndata(
+            adata, 
+            **anndata_config
+        )
+        vae = scvi.model.SCVI(adata, n_hidden=n_hidden)
+        vae.train(lr=lr)
+        vae.save("my_model/")
+        return [dbc.Alert(
+            [
+                html.H4("Success!", className="alert-heading"),
+                html.Hr(),
+                html.P(
+                    "Trained model and saved it at 'my_model'."
+                ),
 
-        ], dismissable=True, is_open=True,
-    )]
+            ], dismissable=True, is_open=True,
+        )]
 
 @app.callback(
     Output("collapse", "is_open"),
     [Input("collapse-button", "n_clicks")],
     [State("collapse", "is_open")],
 )
-def toggle_collapse(n, is_open):
+def toggle_collapse_callback(n, is_open):
     if n:
         return not is_open
     return is_open
@@ -454,10 +433,9 @@ def render_page_content(pathname):
     elif pathname == "/preprocess":
         return preprocess_page()
     elif pathname == "/setup-anndata":
-        return setup_anndata()
+        return setup_anndata_page()
     elif pathname == '/train-model':
-        return train_model()
-    # If the user tries to reach a different page, return a 404 message
+        return train_model_page()
     return dbc.Jumbotron(
         [
             html.H1("404: Not found", className="text-danger"),
