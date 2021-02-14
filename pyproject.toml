@@ -33,6 +33,9 @@ scvi-tools = ">=0.8.1"
 
 [tool.poetry.dev-dependencies]
 
+[tool.poetry.scripts]
+scvi_tools_gui = "scvi_tools_gui.app:run"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
