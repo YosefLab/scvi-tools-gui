@@ -2,7 +2,7 @@
 name = "scvi-tools-gui"
 version = "0.0.1"
 description = "A gui for scvi-tools."
-authors = ["Michael Jayasuriya <mjayasur@berkeley.edu>"]
+authors = ["Michael Jayasuriya <mjayasur@berkeley.edu>", "Adam Gayoso <adamgayoso@berkeley.edu>"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
@@ -25,6 +25,7 @@ readme = "README.md"
 dash = ">=1.19.0"
 dash-bootstrap-components = "0.11.2"
 dash-uploader = "0.4.1"
+gdown = ">=3.12.2"
 plotly = ">=4.14.3"
 python = ">=3.6.2,<4.0"
 scanpy = ">=1.6"

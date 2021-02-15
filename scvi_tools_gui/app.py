@@ -2,11 +2,19 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_uploader as du
 from dash.dependencies import Input, Output, State
 import base64
 import datetime
 import io
 import plotly.express as px
+
+from utils import *
+
+import uuid
+
+import gdown
+
 
 from styles import SIDEBAR_STYLE, CONTENT_STYLE, LOGO_STYLE
 
@@ -15,12 +23,15 @@ import json
 import scvi
 import scanpy as sc
 
+import time
+
 sc.set_figure_params(figsize=(4, 4))
 
 
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 
+du.configure_upload(app, r"./data")
 
 sidebar = html.Div(
     [
@@ -55,78 +66,108 @@ def upload_page():
     return( 
         html.Div(
             [
-                html.H2("Loading your .h5ad datafile"),
+                html.H2("Loading anndata"),
                 html.Hr(),
-
-                html.H5("Local files"),
                 
-                dcc.Upload(
-                    id='upload-data',
-                    children=html.Div([
-                        'Drag and Drop or ',
-                        html.A('Select Files')
-                    ]),
-                    style={
-                        'width': '100%',
-                        'height': '60px',
-                        'lineHeight': '60px',
-                        'borderWidth': '1px',
-                        'borderStyle': 'dashed',
-                        'borderRadius': '5px',
-                        'textAlign': 'center',
-                        'margin': '10px'
-                    },
-                    #  allow multiple files to be uploaded
-                    multiple=True
+                
+                html.Div(
+                    id="upload-message"
                 ),
-                html.H5("Google drive file link (faster): "),
-                dcc.Input(
-                    placeholder='Enter a google drive link.',
-                    type='text',
-                    value='',
-                    style = {
-                        "width" : "100%"
-                    }
-                ),
-                html.H5("Load demo dataset"),
+
+                html.H5("Choose dataset"),
+            
                 dcc.Dropdown(
-                    options=[
-                        {'label' : 'dog', 'value' : "chicken"},
-                    ]
+                    options=get_datasets(),
+                    id = "dataset-dropdown",
+                    className="mb-3"
                 ),
-                html.Div(id='output-data-upload',
+                dbc.Button(
+                    "Submit",
+                    id="submit-datafile",
+                    className="mb-3 mr-3 mt-3",
+                    color="success",
+                ),
+                dbc.Button("Upload your own .h5ad data", id="open", color="primary"),
+
+                html.Div(
+                    [
+                        dbc.Modal(
+                            [
+                                dbc.ModalHeader("Header"),
+                                dbc.ModalBody([
+
+                                    html.H5("Local files"),
+                                    html.Div(
+                                        [
+                                            du.Upload(
+                                                id='dash-uploader',
+                                                upload_id=uuid.uuid1(),  # Unique session id
+                                            ),                        
+                                            html.Div(id='callback-output'),
+                                        ],
+                                        className="mb-3",
+                                    ),
+                                    html.H5("Google drive file link (faster): "),
+                                    dbc.Row([
+                                        dbc.Col(
+                                            [
+                                                dcc.Input(
+                                                    placeholder='Dataset name',
+                                                    type='text',
+                                                    value='',
+                                                    style = {
+                                                        "width" : "100%"
+                                                    },
+                                                    id="name"
+                                                ),
+                                            ],
+                                            width = 4
+                                        ),
+                                        dbc.Col(
+                                            [
+                                                dcc.Input(
+                                                    placeholder='Public google drive link',
+                                                    type='text',
+                                                    value='',
+                                                    style = {
+                                                        "width" : "100%"
+                                                    },
+                                                    id="link"
+                                                ),
+                                            ]
+                                        ),
+                                        dbc.Col(
+                                            [
+                                                dbc.Button("Download", id="download", )
+                                            ],
+                                            width = 2
+                                        )
+                                    ]),
+                                    html.Div(
+                                        [
+                                            
+                                            dbc.Spinner(html.Div(id="loading-output")),
+                                        ]
+                                    )
+
+
+
+
+                                ]),
+                                dbc.ModalFooter(
+                                    dbc.Button("Done", id="close", className="ml-auto")
+                                ),
+                            ],
+                            id="modal",
+                            size="xl",
+                        ),
+                    ]
                 ),
 
             ]
         )
     )
 
-def parse_contents(contents, filename, date):
-    content_type, content_string = contents.split(',')
-
-    decoded = base64.b64decode(content_string)
-    open("data_original.h5ad", 'wb').write(decoded)
-    try:
-        if 'h5ad' in filename:
-            # Assume that the user uploaded a h5ad file
-            
-            adata = scvi.data.read_h5ad("data_original.h5ad")
-            print (adata)
-            
-        else:
-            raise Exception()
-            
-    except Exception as e:
-        print(e)
-        return html.Div([
-            'There was an error processing this file. Make sure you are loading a .h5ad anndata file.'
-        ])
-    
-
-    return html.Div([
-        html.H5(filename),
-        
-    ])
 
 def preprocess_page():
     return (
@@ -316,17 +357,53 @@ def train_model_page():
         ])
     )
 
+@app.callback(
+    Output("upload-message", "children"),
+    Input('submit-datafile', "n_clicks"),
+    State("dataset-dropdown", "value")
+)
+def choose_dataset(n, dataset):
+    if n >= 1 and dataset:
+        write_config("dataset", dataset)
+        return dbc.Alert("Chose "+dataset+" as dataset.", color="success", dismissable=True),
 
-@app.callback(Output('output-data-upload', 'children'),
-              Input('upload-data', 'contents'),
-              State('upload-data', 'filename'),
-              State('upload-data', 'last_modified'))
-def update_output_callback(list_of_contents, list_of_names, list_of_dates):
-    if list_of_contents is not None:
-        children = [
-            parse_contents(c, n, d) for c, n, d in
-            zip(list_of_contents, list_of_names, list_of_dates)]
-        return children
+@app.callback(
+    Output("loading-output", "children"), 
+    [Input("download", "n_clicks")],
+    [State("link","value")],
+    [State("name","value")],
+
+)
+def load_output(n,url,name):
+    if n >= 1:
+        output = "./data/data.h5ad"
+        try:
+            gdown.download(url,output, quiet=False)
+        except Exception as e:
+            print (e)
+            return "Error, try again."
+        add_path("./data/data.h5ad", name)
+        return "Downloaded!"
+
+@app.callback(
+    Output("modal", "is_open"),
+    Output("dataset-dropdown", "options"),
+    [Input("open", "n_clicks"), Input("close", "n_clicks")],
+    [State("modal", "is_open")],
+)
+def toggle_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open, get_datasets()
+    return is_open, get_datasets()
+@du.callback(
+    output=Output('callback-output', 'children'),
+    id='dash-uploader',
+)
+def get_a_list(filenames):
+    for filename in filenames:
+        add_path(filename)
+    return html.Ul([html.Li(filenames)])
+
 
 @app.callback([
     Output("status_dialog","children"),
