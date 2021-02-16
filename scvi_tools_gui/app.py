@@ -500,6 +500,16 @@ def train_model_callback(n_clicks, n_hidden, model_type):
         print (vae)
         vae.train(callbacks=[ProgressCallback()])
         vae.save("my_" + model_type + "_model/")
+        latent = vae.get_latent_representation()
+        adata.obsm["X_scVI"] = latent
+        sc.pp.neighbors(adata, use_rep="X_scVI")
+        sc.tl.umap(adata, min_dist=0.2)
+        sc.pl.umap(
+            adata, 
+            color="cell_type", 
+            frameon=False,
+            save="test.png"
+        )
         return [dbc.Alert(
             [
                 html.H4("Success!", className="alert-heading"),
@@ -507,6 +517,9 @@ def train_model_callback(n_clicks, n_hidden, model_type):
                 html.P(
                     "Trained model and saved it at 'my_model'."
                 ),
+                html.Img(
+                    src="test.png"
+                )
 
             ], dismissable=True, is_open=True,
         )]
