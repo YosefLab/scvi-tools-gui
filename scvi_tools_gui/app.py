@@ -511,6 +511,8 @@ def train_model_callback(n_clicks, n_hidden, model_type):
             save="figures/umaptest.png"
         )
         print ("Done!!!")
+        image_filename = 'figures/umapfigures/umaptest.png' # replace with your own image
+        encoded_image = base64.b64encode(open(image_filename, 'rb').read())
         return [dbc.Alert(
             [
                 html.H4("Success!", className="alert-heading"),
@@ -519,7 +521,7 @@ def train_model_callback(n_clicks, n_hidden, model_type):
                     "Trained model and saved it at 'my_model'."
                 ),
                 html.Img(
-                    src="figures/umapfigures/umaptest.png"
+                    src="html.Img(src='data:image/png;base64,{}'.format(encoded_image))"
                 )
 
             ], dismissable=True, is_open=True,
