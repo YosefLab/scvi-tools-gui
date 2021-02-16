@@ -508,7 +508,7 @@ def train_model_callback(n_clicks, n_hidden, model_type):
             adata, 
             color="cell_type", 
             frameon=False,
-            save="test.png"
+            save="figures/umaptest.png"
         )
         return [dbc.Alert(
             [
@@ -518,7 +518,7 @@ def train_model_callback(n_clicks, n_hidden, model_type):
                     "Trained model and saved it at 'my_model'."
                 ),
                 html.Img(
-                    src="test.png"
+                    src="figures/umaptest.png"
                 )
 
             ], dismissable=True, is_open=True,
