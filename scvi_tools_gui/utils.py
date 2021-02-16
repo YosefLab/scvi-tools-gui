@@ -13,7 +13,9 @@ def get_datasets():
         options.append(make_option(k, paths[k]))
     return options
 
-
+def get_status():
+    with open("status.json") as f:
+        return json.load(f)
 
 class ProgressCallback(Callback):
 
@@ -42,8 +44,18 @@ def write_config(key, value):
         json.dump(conf, f)
     return True
 
+def read_config(key):
+    with open("config.json") as f:
+        conf = json.load(f)
+        assert key in conf, "Key not in config.json"
+        return conf[key]
+    return False
+
+
 def make_option(label, value):
     return {'label':label, 'value':value}
+
+make_options = lambda lis : [make_option(i,i) for i in lis]
 
 def add_path(path, name=None):
     

@@ -54,7 +54,28 @@ sidebar = html.Div(
     style=SIDEBAR_STYLE,
 )
 
+progress = html.Div(
+    [
+        dcc.Interval(id="progress-interval", n_intervals=0, interval=500),
+        dbc.Progress(id="progress"),
+    ],
+    className = "mt-3"
+)
 
+
+builtins = {
+    "cortex" : scvi.data.cortex
+}
+
+models = {
+    "scvi" : scvi.model.SCVI,
+    "totalvi" : scvi.model.TOTALVI
+}
+
+model_options = [
+    {"label" : "SCVI", "value" : "scvi"},
+    {"label" : "TOTALVI", "value" : "totalvi"}
+]
 
 content = html.Div(id="page-content", style=CONTENT_STYLE)
 
@@ -230,46 +251,52 @@ def preprocess_page():
                                 id="flavor"
                             ), 
                         ])
-                    ]), dbc.Button("Submit", id="submit-button", n_clicks=0)
+                    ]),
+                    dbc.Spinner(html.Div(id="loading-output-preprocess")),
+                    dbc.Button("Submit", id="submit-button", n_clicks=0),
+                    
                 
             ], style={})
     )
 
 def setup_anndata_page():
-    adata = scvi.data.read_h5ad("data.h5ad")
-    batch_key_names = adata.obs.keys()
-    obsm_key_names = adata.obsm.keys()
-    uns_key_names = adata.uns.overloaded.keys()
-    create_options = lambda lis : [{'label' : i, 'value' : i} for i in lis]
-    batch_key_options = create_options(batch_key_names)
-    obsm_key_options = create_options(obsm_key_names)
-    uns_key_options = create_options(uns_key_names)
+    adata = scvi.data.read_h5ad("data/preprocessed_data.h5ad")
+    batch_key_names = ["None"] + list(adata.obs.keys())
+    obsm_key_names = ["None"] + list(adata.obsm.keys())
+    uns_key_names = ["None"] + list(adata.uns.overloaded.keys())
+    
+    batch_key_options = make_options(batch_key_names)
+    obsm_key_options = make_options(obsm_key_names)
+    uns_key_options = make_options(uns_key_names)
     return (
         html.Div([
             html.H2("Setup anndata for training"),
             html.Hr(),
-            html.P('batch_key'),
+            html.Div(id="setup-anndata-status", children= [], className="mb-2 mt-2"), 
+            html.Label('batch_key'),
             dcc.Dropdown(
                 id = "batch_key",
                 options=batch_key_options,
+                placeholder="None",
                 value='None'
             ),
-            html.P('protein_expression_obsm_key'),
+            html.Label('protein_expression_obsm_key'),
             dcc.Dropdown(
                 id = "obsm_key",
                 options=obsm_key_options,
+                placeholder="None",
                 value='None'
             ),
-            html.P('protein_names_uns_key'),
+            html.Label('protein_names_uns_key'),
             dcc.Dropdown(
                 id = "uns_key",
                 options=uns_key_options,
+                placeholder="None",
                 value='None'
             ),
-            dbc.Button("Submit", id="setup-anndata-submit", n_clicks=0),
-            html.Div(id="setup-anndata-status", children= [
-                
-            ]), 
+            
+            dbc.Button("Submit", id="setup-anndata-submit", n_clicks=0,className="mt-3"),
+            
 
         ], style={})
 
@@ -291,14 +318,7 @@ def train_model_page():
                 [
                     dcc.Dropdown(
                         id='model-type',
-                        options=[
-                            {'label': 'SCVI', 'value': 'scvi'},
-                            {'label': 'SCANVI', 'value': 'scanvi'},
-                            {'label': 'TOTALVI', 'value': 'totalvi'},
-                            {'label': 'LinearSCVI', 'value': 'linearscvi'},
-                            {'label': 'AUTOZI', 'value': 'autozi'},
-                            {'label': 'GIMVI', 'value': 'gimvi'},
-                        ],
+                        options=model_options,
                         value='scvi',
                         className="mb-3",
                         style={
@@ -330,19 +350,6 @@ def train_model_page():
                         ),
                     ]
                 ),
-                html.Div(
-                    [
-                        html.H5('Training params'),
-                        html.P('lr'),
-                        dcc.Input(
-                            placeholder='0.001',
-                            type='number',
-                            value=0.001,
-                            className = "mb-3",
-                            id="lr"
-                        ),
-                    ]
-                ),
                 ],
                 id="collapse",
             ),
@@ -353,6 +360,7 @@ def train_model_page():
                     id="train-button",
                 ),
             ]),
+            progress,
             html.Div(id="train-model-status")
         ])
     )
@@ -409,6 +417,7 @@ def get_a_list(filenames):
     Output("status_dialog","children"),
     Output('n_genes_by_counts', 'figure'),
     Output('total_counts', 'figure'),
+    Output('loading-output-preprocess', 'children'),
     Input('submit-button', 'n_clicks'),
     State("filter_genes_min_count", "value"),
     State("num_features_selected", "value"),
@@ -416,8 +425,13 @@ def get_a_list(filenames):
     State("flavor", "value"),
 ])
 def preprocess_callback(n_clicks, min_counts, num_features, subset, flavor):
+    path = read_config("dataset")
     if n_clicks >= 1:
-        adata = scvi.data.read_h5ad("data_original.h5ad")
+        adata = None
+        if path not in builtins:
+            adata = scvi.data.read_h5ad(path)
+        else:
+            adata = builtins[path](run_setup_anndata=False)
         sc.pp.filter_genes(adata, min_counts=min_counts)
         adata.layers["counts"] = adata.X.copy()
         sc.pp.highly_variable_genes(
@@ -427,10 +441,10 @@ def preprocess_callback(n_clicks, min_counts, num_features, subset, flavor):
             layer="counts",
             flavor=flavor
         )
-        adata.write_h5ad("data.h5ad")
+        adata.write_h5ad("./data/preprocessed_data.h5ad")
         sc.pp.calculate_qc_metrics(adata, inplace=True)
-
-        return [], px.violin(adata.obs, y="n_genes_by_counts"), px.violin(adata.obs, y="total_counts")
+        alert = dbc.Alert("Successfully preprocessed data.", color="success", dismissable=True)
+        return [], px.violin(adata.obs, y="n_genes_by_counts"), px.violin(adata.obs, y="total_counts"), alert
 
 @app.callback(
     Output("setup-anndata-status",  "children"),
@@ -441,7 +455,7 @@ def preprocess_callback(n_clicks, min_counts, num_features, subset, flavor):
 )
 def setup_anndata_callback(n_clicks, batch_key, obsm_key, uns_key):
     if n_clicks >= 1:
-        adata = scvi.data.read_h5ad("data.h5ad")
+        adata = scvi.data.read_h5ad("data/preprocessed_data.h5ad")
         anndata_config = {
 
             'batch_key' : batch_key,
@@ -452,36 +466,40 @@ def setup_anndata_callback(n_clicks, batch_key, obsm_key, uns_key):
         json.dump(anndata_config, open('anndata_config.json','w'))
 
 
-        return [dbc.Alert(
-            [
-                html.H4("Success!", className="alert-heading"),
-                html.Hr(),
-                html.P(
-                    str(adata),
-                    className="mb-0",
-                ),
-            ], dismissable=True, is_open=True,
-        )]
+        return [dbc.Alert("Success! Anndata setup.", dismissable=True, is_open=True, color = "success")]
 
 
+@app.callback(
+    [Output("progress", "value"), Output("progress", "children")],
+    [Input("progress-interval", "n_intervals")],
+)
+def update_progress(n):
+    # check progress of some background process, in this example we'll just
+    # use n_intervals constrained to be in 0-100
+
+    progress = int(get_status()["epoch"]/400 * 100)
+    # only add text after 5% progress to ensure text isn't squashed too much
+    return progress, f"{progress} %" if progress >= 5 else ""
 
 @app.callback(
     Output("train-model-status", "children"),
     Input("train-button", "n_clicks"),
     State("n_hidden", "value"),
-    State("lr", "value"),
+    State("model-type", "value")
 )
-def train_model_callback(n_clicks, n_hidden, lr):
+def train_model_callback(n_clicks, n_hidden, model_type):
+    model = models[model_type]
     if n_clicks >= 1:
-        adata = scvi.data.read_h5ad("data.h5ad")
+        adata = scvi.data.read_h5ad("data/preprocessed_data.h5ad")
         anndata_config = json.loads(open("anndata_config.json", "r").read())
         scvi.data.setup_anndata(
             adata, 
             **anndata_config
         )
-        vae = scvi.model.SCVI(adata, n_hidden=n_hidden)
-        vae.train(lr=lr)
-        vae.save("my_model/")
+        vae = model(adata, n_hidden=n_hidden)
+        print (vae)
+        vae.train(callbacks=[ProgressCallback()])
+        vae.save("my_" + model_type + "_model/")
         return [dbc.Alert(
             [
                 html.H4("Success!", className="alert-heading"),
