@@ -510,6 +510,7 @@ def train_model_callback(n_clicks, n_hidden, model_type):
             frameon=False,
             save="figures/umaptest.png"
         )
+        print "Done!!!"
         return [dbc.Alert(
             [
                 html.H4("Success!", className="alert-heading"),
@@ -518,7 +519,7 @@ def train_model_callback(n_clicks, n_hidden, model_type):
                     "Trained model and saved it at 'my_model'."
                 ),
                 html.Img(
-                    src="figures/umaptest.png"
+                    src="figures/umapfigures/umaptest.png"
                 )
 
             ], dismissable=True, is_open=True,
