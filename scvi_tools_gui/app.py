@@ -7,6 +7,9 @@ from dash.dependencies import Input, Output, State
 import base64
 import datetime
 import io
+
+import subprocess
+import os
 import plotly.express as px
 
 from utils import *
@@ -46,6 +49,7 @@ sidebar = html.Div(
                 dbc.NavLink("Preprocess", href="/preprocess", active="exact"),
                 dbc.NavLink("Setup anndata", href="/setup-anndata", active="exact"),
                 dbc.NavLink("Train model", href="/train-model", active="exact"),
+                dbc.NavLink("cellxgene visualization", href="/visualize", active="exact"),
             ],
             vertical=True,
             pills=True,
@@ -365,6 +369,18 @@ def train_model_page():
         ])
     )
 
+def visualize_page():
+    subprocess.run(["cellxgene", "launch", "./data/post_training_data.h5ad"])
+    return (
+        html.Div(
+            [
+                html.H2("Visualizing with cellxgene"),
+                html.Hr(),
+                html.Iframe(src="http://localhost:5005", style={"width" : "100%","height":500})
+            ]
+        )
+    )
+
 @app.callback(
     Output("upload-message", "children"),
     Input('submit-datafile', "n_clicks"),
@@ -511,8 +527,7 @@ def train_model_callback(n_clicks, n_hidden, model_type):
             save="figures/umaptest.png"
         )
         print ("Done!!!")
-        image_filename = 'figures/umapfigures/umaptest.png' # replace with your own image
-        encoded_image = base64.b64encode(open(image_filename, 'rb').read())
+        adata.write_h5ad("./data/post_training_data.h5ad")
         return [dbc.Alert(
             [
                 html.H4("Success!", className="alert-heading"),
@@ -520,9 +535,6 @@ def train_model_callback(n_clicks, n_hidden, model_type):
                 html.P(
                     "Trained model and saved it at 'my_model'."
                 ),
-                html.Img(
-                    src="html.Img(src='data:image/png;base64,{}'.format(encoded_image))"
-                )
 
             ], dismissable=True, is_open=True,
         )]
@@ -547,6 +559,8 @@ def render_page_content(pathname):
         return setup_anndata_page()
     elif pathname == '/train-model':
         return train_model_page()
+    elif pathname == '/visualize':
+        return visualize_page()
     return dbc.Jumbotron(
         [
             html.H1("404: Not found", className="text-danger"),
@@ -556,11 +570,11 @@ def render_page_content(pathname):
     )
 
 def run():
-    app.run_server()
+    app.run_server(debug=False)
 
 def debug():
     app.run_server(debug=True)
 
 
 if __name__ == "__main__":
-    debug()
+    run()
