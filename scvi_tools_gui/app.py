@@ -378,7 +378,7 @@ def visualize_page():
             [
                 html.H2("Visualizing with cellxgene"),
                 html.Hr(),
-                html.Iframe(src="http://localhost:5005", style={"width" : "100%","height":500})
+                html.Iframe(src=url, style={"width" : "100%","height":500})
             ]
         )
     )
