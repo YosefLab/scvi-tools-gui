@@ -513,19 +513,23 @@ def train_model_callback(n_clicks, n_hidden, model_type):
             **anndata_config
         )
         vae = model(adata, n_hidden=n_hidden)
-        print (vae)
+
         vae.train(callbacks=[ProgressCallback()])
+        print ('finished training')
         vae.save("my_" + model_type + "_model/")
+        print ('saved model')
         latent = vae.get_latent_representation()
         adata.obsm["X_scVI"] = latent
         sc.pp.neighbors(adata, use_rep="X_scVI")
         sc.tl.umap(adata, min_dist=0.2)
+        print ('finished tl.umap')
         sc.pl.umap(
             adata, 
             color="cell_type", 
             frameon=False,
         )
         adata.write_h5ad("./data/post_training_data.h5ad")
+        print ('written')
         return [dbc.Alert(
             [
                 html.H4("Success!", className="alert-heading"),
