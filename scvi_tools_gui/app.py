@@ -524,9 +524,7 @@ def train_model_callback(n_clicks, n_hidden, model_type):
             adata, 
             color="cell_type", 
             frameon=False,
-            save="figures/umaptest.png"
         )
-        print ("Done!!!")
         adata.write_h5ad("./data/post_training_data.h5ad")
         return [dbc.Alert(
             [
