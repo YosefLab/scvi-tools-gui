@@ -371,18 +371,32 @@ def train_model_page():
     )
 
 def visualize_page():
-    url = read_config("url")
-    print ("Url for iframe", url)
-    subprocess.run(["cellxgene", "launch", "./data/post_training_data.h5ad"])
+
+    subprocess.Popen(["cellxgene", "launch", "./data/post_training_data.h5ad"])
+    # subprocess.Popen(["cellxgene", "launch", "https://cellxgene-example-data.czi.technology/pbmc3k.h5ad"])
     return (
         html.Div(
             [
                 html.H2("Visualizing with cellxgene"),
                 html.Hr(),
-                html.Iframe(src=url, style={"width" : "100%","height":500})
+                html.Div([
+
+
+                ], id="iframe-div"),
+                dbc.Button("Visualize", id="visualize-button", className="mr-2"),
             ]
         )
     )
+
+@app.callback(
+    Output("iframe-div", "children"),
+    Input("visualize-button","n_clicks")
+)
+def visualize_callback(n):
+    url = read_config("url")
+    print ("Url for iframe", url)
+    if n:
+        return html.Iframe(src=url, style={"width": "100%", "height": 500})
 
 @app.callback(
     Output("upload-message", "children"),
