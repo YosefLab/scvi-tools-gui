@@ -7,6 +7,7 @@ from dash.dependencies import Input, Output, State
 import base64
 import datetime
 import io
+import sys
 
 import subprocess
 import os
@@ -370,6 +371,7 @@ def train_model_page():
     )
 
 def visualize_page():
+    url = read_config("url")
     subprocess.run(["cellxgene", "launch", "./data/post_training_data.h5ad"])
     return (
         html.Div(
@@ -579,4 +581,6 @@ def debug():
 
 
 if __name__ == "__main__":
+    print ("URL cellxgene will run on",sys.argv[1])
+    write_config("url", sys.argv[1])
     run()
