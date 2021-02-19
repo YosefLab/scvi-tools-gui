@@ -372,6 +372,7 @@ def train_model_page():
 
 def visualize_page():
     url = read_config("url")
+    print ("Url for iframe", url)
     subprocess.run(["cellxgene", "launch", "./data/post_training_data.h5ad"])
     return (
         html.Div(
