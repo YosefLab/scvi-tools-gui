@@ -373,17 +373,18 @@ def train_model_page():
 def visualize_page():
 
     subprocess.Popen(["cellxgene", "launch", "./data/post_training_data.h5ad"])
+    url = read_config("url")
     # subprocess.Popen(["cellxgene", "launch", "https://cellxgene-example-data.czi.technology/pbmc3k.h5ad"])
     return (
         html.Div(
             [
-                html.H2("Visualizing with cellxgene"),
-                html.Hr(),
                 html.Div([
 
 
                 ], id="iframe-div"),
                 dbc.Button("Visualize", id="visualize-button", className="mr-2"),
+                html.A(dbc.Button("Open in browser"), href=url, target='_blank')
+                
             ]
         )
     )
