@@ -374,6 +374,7 @@ def visualize_page():
 
     subprocess.Popen(["cellxgene", "launch", "./data/post_training_data.h5ad"])
     url = read_config("url")
+
     # subprocess.Popen(["cellxgene", "launch", "https://cellxgene-example-data.czi.technology/pbmc3k.h5ad"])
     return (
         html.Div(
@@ -390,7 +391,7 @@ def visualize_page():
     )
 
 iframe_style = {
-    'width': '1000', 'height': '500',
+    'width': '1000px', 'height': '1000px',
     '-ms-zoom': '0.75',
     '-moz-transform': 'scale(0.75)',
     '-moz-transform-origin': '0 0',
