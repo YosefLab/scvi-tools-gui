@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "scvi-tools-gui"
+version = "0.0.1"
+description = "A gui for scvi-tools."
+authors = ["Michael Jayasuriya <mjayasur@berkeley.edu>", "Adam Gayoso <adamgayoso@berkeley.edu>"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3.6",
+  "Programming Language :: Python :: 3.7",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+license = "BSD-3-Clause"
+packages = [
+  {include = "scvi_tools_gui"},
+]
+readme = "README.md"
+
+
+[tool.poetry.dependencies]
+dash = ">=1.19.0"
+dash-bootstrap-components = "0.11.2"
+dash-uploader = "0.4.1"
+gdown = ">=3.12.2"
+plotly = ">=4.14.3"
+python = ">=3.6.2,<4.0"
+scanpy = ">=1.6"
+scikit-misc = ">=0.1.3"
+scvi-tools = ">=0.9.0a2"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+scvi_tools_gui = "scvi_tools_gui.app:run"
+
+[build-system]
+build-backend = "poetry.masonry.api"
+requires = [
+  "poetry>=1.0",
+  "setuptools", # keep it here or "pip install -e" would fail
+]

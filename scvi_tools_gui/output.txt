@@ -1,0 +1,8 @@
+Dash is running on http://127.0.0.1:8050/
+
+ * Serving Flask app "__main__" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+Unable to open file (unable to open file: name = 'data.h5ad', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
