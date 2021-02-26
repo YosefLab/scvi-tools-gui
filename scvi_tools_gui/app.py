@@ -390,7 +390,7 @@ def visualize_page():
     )
 
 iframe_style = {
-    'width': 'auto', 'height': '500',
+    'width': '1000', 'height': '500',
     '-ms-zoom': '0.75',
     '-moz-transform': 'scale(0.75)',
     '-moz-transform-origin': '0 0',
