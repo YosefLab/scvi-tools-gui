@@ -17,6 +17,14 @@ def get_status():
     with open("status.json") as f:
         return json.load(f)
 
+def reset_status():
+    with open("status.json") as f:
+
+        status = json.load(f)
+        status["epoch"] = 0
+    with open("status.json", 'w') as f:
+        json.dump(status, f)
+
 class ProgressCallback(Callback):
 
     def on_epoch_end(self, trainer, pl_module):

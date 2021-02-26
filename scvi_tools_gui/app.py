@@ -388,6 +388,17 @@ def visualize_page():
         )
     )
 
+iframe_style = {
+    'width': 'auto', 'height': '500',
+    '-ms-zoom': '0.75',
+    '-moz-transform': 'scale(0.75)',
+    '-moz-transform-origin': '0 0',
+    '-o-transform': 'scale(0.75)',
+    '-o-transform-origin': '0 0',
+    '-webkit-transform': 'scale(0.75)',
+    '-webkit-transform-origin': '0 0',
+}
+
 @app.callback(
     Output("iframe-div", "children"),
     Input("visualize-button","n_clicks")
@@ -396,7 +407,7 @@ def visualize_callback(n):
     url = read_config("url")
     print ("Url for iframe", url)
     if n:
-        return html.Iframe(src=url, style={"width": "100%", "height": 500})
+        return html.Iframe(src=url, style=iframe_style)
 
 @app.callback(
     Output("upload-message", "children"),
@@ -459,7 +470,7 @@ def get_a_list(filenames):
 ])
 def preprocess_callback(n_clicks, min_counts, num_features, subset, flavor):
     path = read_config("dataset")
-    if n_clicks >= 1:
+    if n_clicks < 1:
         adata = None
         if path not in builtins:
             adata = scvi.data.read_h5ad(path)
@@ -523,6 +534,7 @@ def update_progress(n):
 def train_model_callback(n_clicks, n_hidden, model_type):
     model = models[model_type]
     if n_clicks >= 1:
+        reset_status()
         adata = scvi.data.read_h5ad("data/preprocessed_data.h5ad")
         anndata_config = json.loads(open("anndata_config.json", "r").read())
         scvi.data.setup_anndata(
